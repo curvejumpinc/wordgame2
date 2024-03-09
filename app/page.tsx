@@ -90,7 +90,7 @@ export default function Home() {
     return wordList.includes(word.toLowerCase());
 }
 
-const handleWordChange = (event) => {
+const handleWordChange = (event : any) => {
   setNewWord(event.target.value);
 };
 
@@ -140,7 +140,7 @@ const handleKeyDown = (event : any) => {
           <p>Enter a new word that differs by only 1 letter:</p>
           <input type="text" value={newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
-          {gameOver && <p>Time's Up! You scored {usedWords.size} points.</p>}
+          {gameOver && <p>Time`&apos;` Up! You scored {usedWords.size} points.</p>}
         </div>
       )}
     </div>
