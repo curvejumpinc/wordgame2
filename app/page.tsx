@@ -3,14 +3,15 @@
 import Image from "next/image";
 import React, { useState, useEffect } from 'react';
 
-const SAVE_SCORE_URL = "/score"
+const SAVE_SCORE_URL = "/api/score";
+const TOTAL_TIME = 60;
 
 export default function Home() {
 
   const [age, setAge] = useState(0);
-  const [score, setScore] = useState(0);
   const [startGame, setStartGame] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
+  const [startingWord, setStartingWord] = useState('');
   const [newWord, setNewWord] = useState('');
   const [usedWords, setUsedWords] = useState(new Set());
   const [gameOver, setGameOver] = useState(false);
@@ -50,7 +51,7 @@ export default function Home() {
       const response = await fetch(SAVE_SCORE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score: finalScore }),
+        body: JSON.stringify({ startingWord: startingWord, score: finalScore, age: age }),
       });
       if (!response.ok) {
         throw new Error('Failed to save score');
@@ -70,16 +71,17 @@ export default function Home() {
       setStartGame(true);
       setCurrentWord(getRandomWord());
       setUsedWords(new Set());
-      setTimeLeft(60);
+      setTimeLeft(TOTAL_TIME);
     } else {
       alert('Please enter a valid age');
     }
   };
 
   const getRandomWord = () => {
-    // Replace with your logic to get a random word
-    // You can use an API or a local word list
-    return 'dark';
+    let startingWords = ["dark", "rose", "kiss", "ball"];
+    const randomIndex = Math.floor(Math.random() * startingWords.length);
+    setStartingWord(startingWords[randomIndex]);
+    return startingWords[randomIndex];
   };
 
  const isRealWord = (word :string) => {
@@ -99,7 +101,6 @@ const handleKeyDown = (event : any) => {
       setCurrentWord(typedWord);
       setNewWord("");
       setUsedWords(prevUsedWords => new Set(prevUsedWords).add(typedWord));
-      setScore(score + 1);
       setErrorMessage(''); // Clear error message on valid input
     } else {
       setErrorMessage('Invalid word, or already used. Please try again.');
@@ -135,11 +136,11 @@ const handleKeyDown = (event : any) => {
           <h1>Welcome to Word Chain!</h1>
           <h2>Time Left: {timeLeft} seconds</h2>
           <h3>Word: {currentWord}</h3>
-          <p>Score: {score}</p>
+          <p>Score: {usedWords.size}</p>
           <p>Enter a new word that differs by only 1 letter:</p>
           <input type="text" value={newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
           {errorMessage && <p className="error-message">{errorMessage}</p>}
-          {gameOver && <p>Time's Up! You scored {score} points.</p>}
+          {gameOver && <p>Time's Up! You scored {usedWords.size} points.</p>}
         </div>
       )}
     </div>
