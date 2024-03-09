@@ -13,7 +13,8 @@ const GameStateEnums = {
   ROUND_ENDED: "ROUND_ENDED",
   GAME_OVER: "GAME_OVER",
 };
-let startingWords = ["dark", "rose", "kiss", "ball"];
+// let startingWords = ["dark", "rose", "kiss", "ball"];
+let startingWords = ["dark", "rose"];
 
 const generateRandomId = (length: number = 16): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -32,13 +33,13 @@ const userId = generateRandomId(8);
 
 export default function Home() {
   const [age, setAge] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
   const [gameState, setGameState] = useState({
     gameStatus: GameStateEnums.GAME_NOT_STARTED,
     currentRound: 0,
     currentWord: '',
     usedWords: new Set(),
-    timeLeft: 60,
-    newWord: ''
+    newWord: '',
   });
   const [wordList, setWordList] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -60,31 +61,18 @@ export default function Home() {
   
 
   useEffect(() => {
-    if (gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && gameState.timeLeft > 0) {
-      const timer = setInterval(() => setGameState({ ...gameState, timeLeft: gameState.timeLeft - 1}), 1000);
+    if (gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft(prevTime => prevTime - 1), 1000);
       return () => clearInterval(timer);
-    } else if (gameState.timeLeft === 0) {
-      setGameState({ ...gameState, gameStatus : GameStateEnums.ROUND_ENDED});
+    } else if (timeLeft <= 0 && gameState.gameStatus != GameStateEnums.ROUND_ENDED) {
+      setGameState({ ...gameState,
+        gameStatus : GameStateEnums.ROUND_ENDED,
+      });
     }
-  }, [gameState]);
+  }, [gameState, timeLeft]);
 
   const handleAgeChange = (event: { target: { value: string; }; }) => {
     setAge(parseInt(event.target.value));
-  };
-
-  const handleStartGame = () => {
-    if (age > 0) {
-      setGameState({
-        gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
-        currentRound: 0,
-        usedWords: new Set(),
-        timeLeft: TOTAL_TIME,
-        currentWord: startingWords[gameState.currentRound],
-        newWord: ''
-      });
-    } else {
-      alert('Please enter a valid age');
-    }
   };
 
  const isRealWord = (word :string) => {
@@ -137,16 +125,39 @@ const handleKeyDown = (event : any) => {
 
   if (gameState.gameStatus == GameStateEnums.ROUND_ENDED) {
     // recordScore();
-    if (gameState.currentRound >= startingWords.length) {
+    if (gameState.currentRound >= startingWords.length - 1) {
       console.log("Game is finished ", gameState.currentRound);
-      setGameState({...gameState, gameStatus: GameStateEnums.GAME_OVER});
-    } else {
-      setGameState({
-        ...gameState,
-        currentRound: gameState.currentRound + 1,
-        gameStatus: GameStateEnums.ROUND_NOT_STARTED
+      setGameState({...gameState, 
+        gameStatus: GameStateEnums.GAME_OVER,
+        currentRound: 0
       });
+      setTimeLeft(TOTAL_TIME);
     }
+  }
+
+  const handleStartGame = () => {
+    if (age > 0) {
+      setGameState({
+        gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
+        currentRound: 0,
+        usedWords: new Set(),
+        currentWord: startingWords[gameState.currentRound],
+        newWord: ''
+      });
+    } else {
+      alert('Please enter a valid age');
+    }
+  };
+
+  const handleStartRound = () => {
+    setGameState({
+      gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
+      currentRound: gameState.currentRound + 1,
+      usedWords: new Set(),
+      currentWord: startingWords[gameState.currentRound + 1],
+      newWord: ''
+    });
+    setTimeLeft(TOTAL_TIME);
   }
   
   return (
@@ -158,19 +169,13 @@ const handleKeyDown = (event : any) => {
           <input type="number" value={age} onChange={handleAgeChange} />
           <button onClick={handleStartGame}>Start Round {gameState.currentRound + 1}</button>
         </div>
-      )}
-      {(gameState.currentRound > 0 && gameState.gameStatus == GameStateEnums.ROUND_NOT_STARTED) && (
-        <div className="word-chain-game">
-          <h1>Welcome to Word Chain!</h1>
-          <button onClick={handleStartGame}>Start Round {gameState.currentRound + 1}</button>
-        </div>
-      )}
+      )}      
       {gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && (
         <div className="word-chain-game">
           <h1>Word Chain</h1>
           <div>
-            <h2>Time Left: {gameState.timeLeft} seconds</h2>
-            <h3>Word: {gameState.currentWord}</h3>
+            <h2>Time Left: {timeLeft} seconds</h2>
+            <h3>Chain: {gameState.currentWord}</h3>
             <p>Score: {gameState.usedWords.size}</p>
             <p>Enter a new word that differs by only 1 letter:</p>
             <input type="text" value={gameState.newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
@@ -182,9 +187,10 @@ const handleKeyDown = (event : any) => {
         <div className="word-chain-game">
         <h1>Word Chain</h1>
         <div>
-          <h2>Time Left: {gameState.timeLeft} seconds</h2>
+          <h2>Time Left: {timeLeft} seconds</h2>
           <p>Score: {gameState.usedWords.size}</p>
-          <p>Round {gameState.currentRound}: You scored {gameState.usedWords.size} points.</p>
+          <p>Round {gameState.currentRound + 1}: You scored {gameState.usedWords.size} points.</p>
+          <button onClick={handleStartRound}>Start next round</button>
         </div>
       </div>)}
       {gameState.gameStatus == GameStateEnums.GAME_OVER && (
