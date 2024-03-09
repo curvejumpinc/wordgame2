@@ -4,7 +4,7 @@ import Image from "next/image";
 import React, { useState, useEffect } from 'react';
 
 const SAVE_SCORE_URL = "/api/score";
-const TOTAL_TIME = 60;
+const TOTAL_TIME = 10;
 
 export default function Home() {
 
@@ -14,19 +14,18 @@ export default function Home() {
   const [startingWord, setStartingWord] = useState('');
   const [newWord, setNewWord] = useState('');
   const [usedWords, setUsedWords] = useState(new Set());
+  const [wordList, setWordList] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Function to load words from a text file
-  const wordList: string[] = []; // Placeholder for the word list
-
   useEffect(() => {
-    const loadWords = async() => {
+    const loadWords = async () => {
       try {
-          const response = await fetch('./data/wordlist.txt'); // Replace with the actual file path
-          const text = await response.text();
-          wordList.push(...text.trim().split("\n"));
+        const response = await fetch('./data/wordlist.txt'); // Replace with the actual file path
+        const text = await response.text();
+        wordList.push(...text.trim().split("\n"));
+        console.log("Loaded words", wordList.length);
       } catch (error) {
           console.error("Error loading word list:", error);
           alert("Failed to load word list. Please check the file path.");
@@ -34,6 +33,7 @@ export default function Home() {
     }
     loadWords();
   }, [wordList]);
+  
 
   useEffect(() => {
     if (startGame && timeLeft > 0) {
@@ -41,7 +41,6 @@ export default function Home() {
       return () => clearInterval(timer);
     } else if (timeLeft === 0) {
       setGameOver(true);
-      handleGameOver(); // Automatically save score on timeout
     }
   }, [startGame, timeLeft]);
 
@@ -119,7 +118,11 @@ const handleKeyDown = (event : any) => {
     }
     return !usedWords.has(newWord) && isRealWord(newWord);
   };
-
+  
+  if (gameOver) {
+    handleGameOver();
+  }
+  
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-4">
       <div className="word-chain-game">
@@ -133,14 +136,17 @@ const handleKeyDown = (event : any) => {
       )}
       {startGame && (
         <div className="word-chain-game">
-          <h1>Welcome to Word Chain!</h1>
-          <h2>Time Left: {timeLeft} seconds</h2>
-          <h3>Word: {currentWord}</h3>
-          <p>Score: {usedWords.size}</p>
-          <p>Enter a new word that differs by only 1 letter:</p>
-          <input type="text" value={newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
-          {gameOver && <p>Time`&apos;` Up! You scored {usedWords.size} points.</p>}
+          <h1>Word Chain</h1>
+          {gameOver == false && 
+          <div>
+            <h2>Time Left: {timeLeft} seconds</h2>
+            <h3>Word: {currentWord}</h3>
+            <p>Score: {usedWords.size}</p>
+            <p>Enter a new word that differs by only 1 letter:</p>
+            <input type="text" value={newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+          </div>}
+          {gameOver && <p>Thanks for playing! You scored {usedWords.size} points.</p>}
         </div>
       )}
     </div>

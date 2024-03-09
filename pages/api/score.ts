@@ -1,12 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs/promises';
 
-import { createClient } from '@supabase/supabase-js'
-import { start } from 'repl';
-const supabaseUrl = 'https://xyvimpsezgjhqbsvglyu.supabase.co'
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method, body } = req;
 
@@ -18,17 +12,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
       // Append score to file
-      // const filePath = './public/scores.txt'; // Adjust file path as needed
-      // await fs.appendFile(filePath, `${startingWord} ${age} ${score}\n`);
-      const { data, error } = await supabase
-      .from('scores')
-      .insert([
-        { age: age,
-          score: score,
-          startingWord: startingWord },
-      ])
-      .select();
-
+      const filePath = './public/scores.txt'; // Adjust file path as needed
+      await fs.appendFile(filePath, `${startingWord} ${age} ${score}\n`);
+      
       // You can send a success response here
       res.status(200).json({ message: 'Score saved successfully!' });
 
