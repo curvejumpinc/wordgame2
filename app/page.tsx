@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { start } from "repl";
 
-const TOTAL_TIME = 10;
+const TOTAL_TIME = 60;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
@@ -43,7 +43,7 @@ const userId = generateRandomId(8);
 
 export default function Home() {
   const [age, setAge] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME * 1000);
   const [gameover, setGameover] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     gameStatus: GameStateEnums.GAME_NOT_STARTED,
@@ -100,7 +100,6 @@ export default function Home() {
           ...gameState,
           newWord: "",
           currentWord: typedWord,
-          // usedWords: gameState.usedWords.concat(gameState.usedWords, [typedWord]),
           usedWords: [...gameState.usedWords, typedWord],
         });
         setErrorMessage(""); // Clear error message on valid input
@@ -170,55 +169,66 @@ export default function Home() {
     setGameover(true);
   }
 
+  interface Color {
+    className: string;
+  }
+  const ColorfulList = (strings:string[]) => {
+    const colors: Color[] = [
+      { className: 'text-red-500' },
+      { className: 'text-yellow-400' },
+      { className: 'text-slate-600' },
+      { className: 'text-purple-700' },
+      { className: 'text-blue-400' },
+    ];
+  
+    return (
+      <div>
+        {strings.map((string, index) => (
+          <span key={index} className={colors[index % colors.length].className}>
+            {string}-
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-4">
+    <main className="container relative flex flex-col justify-between h-full max-w-6xl px-10 mx-auto xl:px-0 mt-5">
       {gameState.gameStatus == GameStateEnums.GAME_NOT_STARTED && (
           <div className="word-chain-game">
-            <h1>Welcome to Word Chain!</h1>
-            <p>Enter your age to begin:</p>
-            <input type="number" value={age} onChange={handleAgeChange} />
-            <button onClick={handleStartRound}>
+            <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
+            <p className="mb-4 text-lg text-gray-500">Enter your age to begin:</p>
+            <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500" type="number" value={age} onChange={handleAgeChange} />
+            <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2" onClick={handleStartRound}>
               Start Round 1 / 3
             </button>
           </div>
         )}
       {gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && (
-        <div className="word-chain-game">
-          <h1>Word Chain</h1>
+        <div className="container relative flex flex-col justify-between word-chain-game">
+          <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
           <div>
-            <h2>Time Left: {timeLeft} seconds</h2>
-            <h3>Chain: {startingWords[gameState.currentRound]}-{gameState.usedWords.join('-')}</h3>
-            <p>Score: {gameState.usedWords.length}</p>
-            <p>Enter a new word that differs by only 1 letter:</p>
-            <input
+            <h2 className="mb-3 text-2xl font-bold leading-tight text-gray-700">Time Left: {timeLeft} seconds</h2>
+            <h3 className="mb-3 text-lg font-bold leading-tight text-gray-700 whitespace-wrap"> {startingWords[gameState.currentRound]}{ColorfulList(gameState.usedWords)}</h3>
+            <p className="mb-2 items-center text-gray-600">Enter a new word that differs by only 1 letter:</p>
+            <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500"
               type="text"
               value={gameState.newWord}
               onKeyDown={handleKeyDown}
               onChange={handleWordChange}
             />
             {errorMessage && <p className="error-message">{errorMessage}</p>}
-          </div>
-        </div>
-      )}
-      {(gameover) && (
-        <div className="word-chain-game">
-          <h1>Word Chain</h1>
-          <div>
-            <p>Thanks for playing!</p>
+            <h4 className="mb-2 flex text-3xl font-extrabold items-center text-lime-600">Score: {gameState.usedWords.length}</h4>
           </div>
         </div>
       )}
       {gameState.gameStatus == GameStateEnums.ROUND_ENDED && (
         <div className="word-chain-game">
-          <h1>Word Chain</h1>
-          <div>
-            <p>Score: {gameState.usedWords.length}</p>
-            <p>
-              Round {gameState.currentRound + 1}: You scored{" "}
-              {gameState.usedWords.length} points.
-            </p>
-            <button onClick={handleStartRound}>Start next round</button>
-          </div>
+          <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
+            <h2 className="mb-3 text-2xl font-bold leading-tight text-lime-700 whitespace-wrap">You scored {gameState.usedWords.length} points in that round.</h2>
+            {gameover && <h2 className="mb-3 text-2xl mt-6 font-bold leading-tight text-gray-700">Thanks for playing and helping my science experiment</h2>}
+            {!gameover && <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2"
+            onClick={handleStartRound}>Start next round</button>}
         </div>
       )}
     </main>
