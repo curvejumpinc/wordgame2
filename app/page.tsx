@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { start } from "repl";
 
-const TOTAL_TIME = 60;
+const TOTAL_TIME = 10;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
@@ -123,6 +123,7 @@ export default function Home() {
 
   // Save the score after each round
   const recordScore = async () => {
+    if (gameState.gameStatus != GameStateEnums.GAME_OVER) { 
     const { error } = await supabase
       .from("scores")
       .insert([
@@ -134,7 +135,8 @@ export default function Home() {
         },
       ])
       .select();
-    console.log(error);
+    console.log(gameState);
+    }
   };
 
   const handleStartRound = () => {
@@ -151,12 +153,12 @@ export default function Home() {
   };
 
   if (timeLeft <= 0 && gameState.gameStatus != GameStateEnums.ROUND_ENDED) {
-    recordScore();
     setGameState({
       ...gameState,
       gameStatus: GameStateEnums.ROUND_ENDED,
       newWord: ""
       });
+    recordScore();
   }
 
   if (timeLeft <= 0 && gameState.gameStatus == GameStateEnums.ROUND_ENDED && 
