@@ -1,21 +1,46 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js';
+import { start } from 'repl';
 
-const SAVE_SCORE_URL = "/api/score";
 const TOTAL_TIME = 10;
+const GameStateEnums = {
+  GAME_NOT_STARTED: "NOT_STARTED",
+  ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
+  ROUND_STARTED: "ROUND_STARTED",
+  ROUND_IN_PROGRESS: "ROUND_IN_PROGRESS",
+  ROUND_ENDED: "ROUND_ENDED",
+  GAME_OVER: "GAME_OVER",
+};
+let startingWords = ["dark", "rose", "kiss", "ball"];
+
+const generateRandomId = (length: number = 16): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+const userId = generateRandomId(8);
 
 export default function Home() {
   const [age, setAge] = useState(0);
-  const [startGame, setStartGame] = useState(false);
-  const [currentWord, setCurrentWord] = useState('');
-  const [startingWord, setStartingWord] = useState('');
-  const [newWord, setNewWord] = useState('');
-  const [usedWords, setUsedWords] = useState(new Set());
+  const [gameState, setGameState] = useState({
+    gameStatus: GameStateEnums.GAME_NOT_STARTED,
+    currentRound: 0,
+    currentWord: '',
+    usedWords: new Set(),
+    timeLeft: 60,
+    newWord: ''
+  });
   const [wordList, setWordList] = useState<string[]>([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -35,28 +60,13 @@ export default function Home() {
   
 
   useEffect(() => {
-    if (startGame && timeLeft > 0) {
-      const timer = setInterval(() => setTimeLeft(prevTime => prevTime - 1), 1000);
+    if (gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && gameState.timeLeft > 0) {
+      const timer = setInterval(() => setGameState({ ...gameState, timeLeft: gameState.timeLeft - 1}), 1000);
       return () => clearInterval(timer);
-    } else if (timeLeft === 0) {
-      setGameOver(true);
+    } else if (gameState.timeLeft === 0) {
+      setGameState({ ...gameState, gameStatus : GameStateEnums.ROUND_ENDED});
     }
-  }, [startGame, timeLeft]);
-
-  const handleGameOver = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { error } = await supabase
-      .from("scores")
-      .insert([{age: age,
-         score: usedWords.size, 
-         starting_word: startingWord}])
-      .select();
-    console.log(error);
-  };
+  }, [gameState]);
 
   const handleAgeChange = (event: { target: { value: string; }; }) => {
     setAge(parseInt(event.target.value));
@@ -64,39 +74,36 @@ export default function Home() {
 
   const handleStartGame = () => {
     if (age > 0) {
-      setStartGame(true);
-      setCurrentWord(getRandomWord());
-      setUsedWords(new Set());
-      setTimeLeft(TOTAL_TIME);
+      setGameState({
+        gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
+        currentRound: 0,
+        usedWords: new Set(),
+        timeLeft: TOTAL_TIME,
+        currentWord: startingWords[gameState.currentRound],
+        newWord: ''
+      });
     } else {
       alert('Please enter a valid age');
     }
   };
 
-  const getRandomWord = () => {
-    let startingWords = ["dark", "rose", "kiss", "ball"];
-    const randomIndex = Math.floor(Math.random() * startingWords.length);
-    setStartingWord(startingWords[randomIndex]);
-    return startingWords[randomIndex];
-  };
-
  const isRealWord = (word :string) => {
-    // You can use a third-party library to check for real words
-    // For simplicity, this example assumes the word list contains valid words
     return wordList.includes(word.toLowerCase());
 }
 
 const handleWordChange = (event : any) => {
-  setNewWord(event.target.value);
+  setGameState({...gameState, newWord: event.target.value});
 };
 
 const handleKeyDown = (event : any) => {
   if (event.key === 'Enter') {
     const typedWord = event.target.value.toLowerCase();
     if (isValidWord(typedWord)) {
-      setCurrentWord(typedWord);
-      setNewWord("");
-      setUsedWords(prevUsedWords => new Set(prevUsedWords).add(typedWord));
+      setGameState({...gameState, 
+        newWord: '',
+        currentWord: typedWord,
+        usedWords: new Set(gameState.usedWords).add(typedWord)
+      });
       setErrorMessage(''); // Clear error message on valid input
     } else {
       setErrorMessage('Invalid word, or already used. Please try again.');
@@ -105,48 +112,88 @@ const handleKeyDown = (event : any) => {
 };
 
   const isValidWord = (newWord : string) => {
-    if (newWord.length !== currentWord.length) return false;
+    if (newWord.length !== gameState.currentWord.length) return false;
     let differences = 0;
     for (let i = 0; i < newWord.length; i++) {
-      if (newWord[i] !== currentWord[i]) {
+      if (newWord[i] !== gameState.currentWord[i]) {
         differences++;
         if (differences > 1) return false;
       }
     }
-    return !usedWords.has(newWord) && isRealWord(newWord);
+    return !gameState.usedWords.has(newWord) && isRealWord(newWord);
   };
   
-  if (gameOver) {
-    handleGameOver();
+  // Save the score after each round
+  const recordScore = async () => {
+    const { error } = await supabase
+      .from("scores")
+      .insert([{age: age,
+         score: gameState.usedWords.size, 
+         starting_word: startingWords[gameState.currentRound],
+         user_id: userId}])
+      .select();
+    console.log(error);
+  };
+
+  if (gameState.gameStatus == GameStateEnums.ROUND_ENDED) {
+    // recordScore();
+    if (gameState.currentRound >= startingWords.length) {
+      console.log("Game is finished ", gameState.currentRound);
+      setGameState({...gameState, gameStatus: GameStateEnums.GAME_OVER});
+    } else {
+      setGameState({
+        ...gameState,
+        currentRound: gameState.currentRound + 1,
+        gameStatus: GameStateEnums.ROUND_NOT_STARTED
+      });
+    }
   }
   
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-4">
-      <div className="word-chain-game">
-      {!startGame && (
-        <div>
+      {(gameState.currentRound == 0 && gameState.gameStatus == GameStateEnums.GAME_NOT_STARTED) && (
+        <div className="word-chain-game">
           <h1>Welcome to Word Chain!</h1>
           <p>Enter your age to begin:</p>
           <input type="number" value={age} onChange={handleAgeChange} />
-          <button onClick={handleStartGame}>Start Game</button>
+          <button onClick={handleStartGame}>Start Round {gameState.currentRound + 1}</button>
         </div>
       )}
-      {startGame && (
+      {(gameState.currentRound > 0 && gameState.gameStatus == GameStateEnums.ROUND_NOT_STARTED) && (
+        <div className="word-chain-game">
+          <h1>Welcome to Word Chain!</h1>
+          <button onClick={handleStartGame}>Start Round {gameState.currentRound + 1}</button>
+        </div>
+      )}
+      {gameState.gameStatus == GameStateEnums.ROUND_IN_PROGRESS && (
         <div className="word-chain-game">
           <h1>Word Chain</h1>
-          {gameOver == false && 
           <div>
-            <h2>Time Left: {timeLeft} seconds</h2>
-            <h3>Word: {currentWord}</h3>
-            <p>Score: {usedWords.size}</p>
+            <h2>Time Left: {gameState.timeLeft} seconds</h2>
+            <h3>Word: {gameState.currentWord}</h3>
+            <p>Score: {gameState.usedWords.size}</p>
             <p>Enter a new word that differs by only 1 letter:</p>
-            <input type="text" value={newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
+            <input type="text" value={gameState.newWord} onKeyDown={handleKeyDown} onChange={handleWordChange}/>
             {errorMessage && <p className="error-message">{errorMessage}</p>}
-          </div>}
-          {gameOver && <p>Thanks for playing! You scored {usedWords.size} points.</p>}
+          </div>
         </div>
       )}
-    </div>
+      {gameState.gameStatus == GameStateEnums.ROUND_ENDED && (
+        <div className="word-chain-game">
+        <h1>Word Chain</h1>
+        <div>
+          <h2>Time Left: {gameState.timeLeft} seconds</h2>
+          <p>Score: {gameState.usedWords.size}</p>
+          <p>Round {gameState.currentRound}: You scored {gameState.usedWords.size} points.</p>
+        </div>
+      </div>)}
+      {gameState.gameStatus == GameStateEnums.GAME_OVER && (
+        <div className="word-chain-game">
+        <h1>Word Chain</h1>
+        <div>
+          <p>Thanks for playing!</p>
+        </div>
+      </div>)}
     </main>
   );
 }
