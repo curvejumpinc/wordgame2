@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { start } from "repl";
 
-const TOTAL_TIME = 5;
+const TOTAL_TIME = 10;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
@@ -44,6 +44,7 @@ const userId = generateRandomId(8);
 export default function Home() {
   const [age, setAge] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
+  const [gameover, setGameover] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     gameStatus: GameStateEnums.GAME_NOT_STARTED,
     currentRound: -1,
@@ -152,7 +153,8 @@ export default function Home() {
 
   if (timeLeft <= 0 && gameState.gameStatus != GameStateEnums.ROUND_ENDED) {
     // recordScore();
-    setGameState({ ...gameState,
+    setGameState({
+      ...gameState,
       gameStatus: GameStateEnums.ROUND_ENDED,
       newWord: ""
       });
@@ -160,15 +162,12 @@ export default function Home() {
 
   if (timeLeft <= 0 && gameState.gameStatus == GameStateEnums.ROUND_ENDED && 
     gameState.currentRound == startingWords.length - 1) {
-      console.log("Game has ended");
-      setGameState({ ...gameState,
+      setGameState({
+        ...gameState,
         gameStatus: GameStateEnums.GAME_OVER,
         currentRound: 0,
     }); 
-  }
-
-  if (gameState.gameStatus == GameStateEnums.GAME_OVER) {
-    alert("game over");
+    setGameover(true);
   }
 
   return (
@@ -201,7 +200,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {gameState.gameStatus == GameStateEnums.GAME_OVER && (
+      {(gameover) && (
         <div className="word-chain-game">
           <h1>Word Chain</h1>
           <div>
