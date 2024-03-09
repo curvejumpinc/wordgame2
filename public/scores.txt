@@ -1,2 +1,3 @@
 knot 8 2
 dark 39 14
+kiss 6 1
