@@ -13,6 +13,15 @@ const GameStateEnums = {
   ROUND_ENDED: "ROUND_ENDED",
   GAME_OVER: "GAME_OVER",
 };
+
+interface GameState {
+  gameStatus: string,
+  currentRound: number,
+  currentWord: string,
+  usedWords: string[],
+  newWord: string,
+}
+
 // let startingWords = ["dark", "rose", "kiss", "ball"];
 let startingWords = ["dark", "rose"];
 
@@ -35,11 +44,11 @@ const userId = generateRandomId(8);
 export default function Home() {
   const [age, setAge] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
-  const [gameState, setGameState] = useState({
+  const [gameState, setGameState] = useState<GameState>({
     gameStatus: GameStateEnums.GAME_NOT_STARTED,
     currentRound: -1,
     currentWord: "",
-    usedWords: new Set(),
+    usedWords: [],
     newWord: "",
   });
   const [wordList, setWordList] = useState<string[]>([]);
@@ -90,7 +99,8 @@ export default function Home() {
           ...gameState,
           newWord: "",
           currentWord: typedWord,
-          usedWords: new Set(gameState.usedWords).add(typedWord),
+          // usedWords: gameState.usedWords.concat(gameState.usedWords, [typedWord]),
+          usedWords: [...gameState.usedWords, typedWord],
         });
         setErrorMessage(""); // Clear error message on valid input
       } else {
@@ -108,7 +118,7 @@ export default function Home() {
         if (differences > 1) return false;
       }
     }
-    return !gameState.usedWords.has(newWord) && isRealWord(newWord);
+    return !gameState.usedWords.includes(newWord) && isRealWord(newWord);
   };
 
   // Save the score after each round
@@ -118,7 +128,7 @@ export default function Home() {
       .insert([
         {
           age: age,
-          score: gameState.usedWords.size,
+          score: gameState.usedWords.length,
           starting_word: startingWords[gameState.currentRound],
           user_id: userId,
         },
@@ -134,7 +144,7 @@ export default function Home() {
         currentRound: gameState.currentRound + 1,
         gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
         currentWord: startingWords[gameState.currentRound + 1],
-        usedWords: new Set(),
+        usedWords: [],
       });
       setTimeLeft(TOTAL_TIME);
     }
@@ -157,6 +167,10 @@ export default function Home() {
     }); 
   }
 
+  if (gameState.gameStatus == GameStateEnums.GAME_OVER) {
+    alert("game over");
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-4">
       {gameState.gameStatus == GameStateEnums.GAME_NOT_STARTED && (
@@ -174,8 +188,8 @@ export default function Home() {
           <h1>Word Chain</h1>
           <div>
             <h2>Time Left: {timeLeft} seconds</h2>
-            <h3>Chain: {gameState.currentWord}</h3>
-            <p>Score: {gameState.usedWords.size}</p>
+            <h3>Chain: {startingWords[gameState.currentRound]}-{gameState.usedWords.join('-')}</h3>
+            <p>Score: {gameState.usedWords.length}</p>
             <p>Enter a new word that differs by only 1 letter:</p>
             <input
               type="text"
@@ -187,24 +201,24 @@ export default function Home() {
           </div>
         </div>
       )}
-      {gameState.gameStatus == GameStateEnums.ROUND_ENDED && (
-        <div className="word-chain-game">
-          <h1>Word Chain</h1>
-          <div>
-            <p>Score: {gameState.usedWords.size}</p>
-            <p>
-              Round {gameState.currentRound + 1}: You scored{" "}
-              {gameState.usedWords.size} points.
-            </p>
-            <button onClick={handleStartRound}>Start next round</button>
-          </div>
-        </div>
-      )}
       {gameState.gameStatus == GameStateEnums.GAME_OVER && (
         <div className="word-chain-game">
           <h1>Word Chain</h1>
           <div>
             <p>Thanks for playing!</p>
+          </div>
+        </div>
+      )}
+      {gameState.gameStatus == GameStateEnums.ROUND_ENDED && (
+        <div className="word-chain-game">
+          <h1>Word Chain</h1>
+          <div>
+            <p>Score: {gameState.usedWords.length}</p>
+            <p>
+              Round {gameState.currentRound + 1}: You scored{" "}
+              {gameState.usedWords.length} points.
+            </p>
+            <button onClick={handleStartRound}>Start next round</button>
           </div>
         </div>
       )}
