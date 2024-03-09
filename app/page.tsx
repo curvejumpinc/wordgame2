@@ -151,7 +151,7 @@ export default function Home() {
   };
 
   if (timeLeft <= 0 && gameState.gameStatus != GameStateEnums.ROUND_ENDED) {
-    // recordScore();
+    recordScore();
     setGameState({
       ...gameState,
       gameStatus: GameStateEnums.ROUND_ENDED,
