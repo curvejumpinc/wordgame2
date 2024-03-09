@@ -1,13 +1,12 @@
 'use client'
 
-import Image from "next/image";
 import React, { useState, useEffect } from 'react';
+import { createBrowserClient } from '@supabase/ssr'
 
 const SAVE_SCORE_URL = "/api/score";
 const TOTAL_TIME = 10;
 
 export default function Home() {
-
   const [age, setAge] = useState(0);
   const [startGame, setStartGame] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
@@ -45,20 +44,18 @@ export default function Home() {
   }, [startGame, timeLeft]);
 
   const handleGameOver = async () => {
-    const finalScore = usedWords.size;
-    try {
-      const response = await fetch(SAVE_SCORE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startingWord: startingWord, score: finalScore, age: age }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save score');
-      }
-      console.log('Score saved successfully!');
-    } catch (error) {
-      console.error('Error saving score:', error);
-    }
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { error } = await supabase
+      .from("scores")
+      .insert([{age: age,
+         score: usedWords.size, 
+         starting_word: startingWord}])
+      .select();
+    console.log(error);
   };
 
   const handleAgeChange = (event: { target: { value: string; }; }) => {
