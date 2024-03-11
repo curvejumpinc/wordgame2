@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const TOTAL_TIME = process.env.ROUND_TIME;
+const TOTAL_TIME = 60;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
