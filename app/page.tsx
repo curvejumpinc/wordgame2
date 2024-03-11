@@ -202,10 +202,10 @@ export default function Home() {
             <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
             <p className="mb-4 text-lg text-gray-500 mt-4">Instructions:</p>
             <ul className="list-disc space-y-2 pl-4 text-lg mb-4">
-              <li>We'll give you a 4 letter starting word.</li>
+              <li>We will give you a 4 letter starting word.</li>
               <li>The new word you guess must be a valid English word and <b>only one letter</b> different from the previous word!</li>
               <li>You have 1 minute to keep it going as long as you can think of words that follow the chain rule.</li>
-              <li><b>No repeats: </b> You can't use the same word twice!</li>
+              <li><b>No repeats: </b> You cannot use the same word twice!</li>
               <li><b>Example: </b>BEAR-FEAR-FEAT-NEAT-MEAT-MEAN-LEAN-BEAN-BEAT</li>
             </ul>
             <p className="mb-4 text-lg text-gray-500">Enter your age to begin:</p>
