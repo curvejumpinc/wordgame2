@@ -129,7 +129,7 @@ export default function Home() {
       .insert([
         {
           age: age,
-          score: gameState.usedWords.length,
+          score: gameState.usedWords.length - 1, // Adjust for the starting word
           starting_word: startingWords[gameState.currentRound],
           user_id: userId,
         },
@@ -146,7 +146,7 @@ export default function Home() {
         currentRound: gameState.currentRound + 1,
         gameStatus: GameStateEnums.ROUND_IN_PROGRESS,
         currentWord: startingWords[gameState.currentRound + 1],
-        usedWords: [],
+        usedWords: [startingWords[gameState.currentRound + 1]],
       });
       setTimeLeft(TOTAL_TIME);
     }
@@ -170,6 +170,8 @@ export default function Home() {
     }); 
     setGameover(true);
   }
+
+  let score = gameState.usedWords.length - 1;
 
   interface Color {
     className: string;
@@ -199,6 +201,13 @@ export default function Home() {
       {gameState.gameStatus == GameStateEnums.GAME_NOT_STARTED && (
           <div className="word-chain-game">
             <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
+            <p className="mb-4 text-lg text-gray-500 mt-4">Instructions:</p>
+            <ul className="list-disc space-y-2 pl-4 text-lg mb-4">
+              <li>We'll give you a 4 letter starting word.</li>
+              <li>The new word you guess must be a valid English word and <b>only one letter</b> different from the previous word!</li>
+              <li>You have 1 minute to keep it going as long as you can think of words that follow the chain rule.</li>
+              <li><b>No repeats</b> You can't use the same word twice!</li>
+            </ul>
             <p className="mb-4 text-lg text-gray-500">Enter your age to begin:</p>
             <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500" type="number" value={age} onChange={handleAgeChange} />
             <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2" onClick={handleStartRound}>
@@ -211,7 +220,7 @@ export default function Home() {
           <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
           <div>
             <h2 className="mb-3 text-2xl font-bold leading-tight text-gray-700">Time Left: {timeLeft} seconds</h2>
-            <h3 className="mb-3 text-lg font-bold leading-tight text-gray-700 whitespace-wrap"> {startingWords[gameState.currentRound]}{ColorfulList(gameState.usedWords)}</h3>
+            <h3 className="mb-3 text-2xl font-bold leading-tight text-gray-700 whitespace-wrap">⛓️ {ColorfulList(gameState.usedWords)}</h3>
             <p className="mb-2 items-center text-gray-600">Enter a new word that differs by only 1 letter:</p>
             <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500"
               type="text"
@@ -220,15 +229,15 @@ export default function Home() {
               onChange={handleWordChange}
             />
             {errorMessage && <p className="error-message">{errorMessage}</p>}
-            <h4 className="mb-2 flex text-3xl font-extrabold items-center text-lime-600">Score: {gameState.usedWords.length}</h4>
+            <h4 className="mb-2 flex text-3xl font-extrabold items-center text-lime-600">Score: {score}</h4>
           </div>
         </div>
       )}
       {gameState.gameStatus == GameStateEnums.ROUND_ENDED && (
         <div className="word-chain-game">
           <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
-            <h2 className="mb-3 text-2xl font-bold leading-tight text-lime-700 whitespace-wrap">You scored {gameState.usedWords.length} points in that round.</h2>
-            {gameover && <h2 className="mb-3 text-2xl mt-6 font-bold leading-tight text-gray-700">Thanks for playing and helping my science experiment</h2>}
+            <h2 className="mb-3 text-2xl font-bold leading-tight text-lime-700 whitespace-wrap">You scored {score} points in that round.</h2>
+            {gameover && <h2 className="mb-3 text-2xl mt-6 leading-tight text-gray-700">🙏 Thanks for playing and helping my science experiment. Please share with a friend so I can collect more data and improve my science experiment.</h2>}
             {!gameover && <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2"
             onClick={handleStartRound}>Start next round</button>}
         </div>
