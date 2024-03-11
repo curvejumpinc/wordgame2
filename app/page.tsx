@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { start } from "repl";
 
-const TOTAL_TIME = 10;
+const TOTAL_TIME = process.env.ROUND_TIME;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
@@ -206,7 +205,8 @@ export default function Home() {
               <li>We'll give you a 4 letter starting word.</li>
               <li>The new word you guess must be a valid English word and <b>only one letter</b> different from the previous word!</li>
               <li>You have 1 minute to keep it going as long as you can think of words that follow the chain rule.</li>
-              <li><b>No repeats</b> You can't use the same word twice!</li>
+              <li><b>No repeats: </b> You can't use the same word twice!</li>
+              <li><b>Example: </b>BEAR-FEAR-FEAT-NEAT-MEAT-MEAN-LEAN-BEAN-BEAT</li>
             </ul>
             <p className="mb-4 text-lg text-gray-500">Enter your age to begin:</p>
             <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500" type="number" value={age} onChange={handleAgeChange} />
