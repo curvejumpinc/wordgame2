@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { start } from "repl";
 
-const TOTAL_TIME = 60;
+const TOTAL_TIME = 5;
 const GameStateEnums = {
   GAME_NOT_STARTED: "NOT_STARTED",
   ROUND_NOT_STARTED: "ROUND_NOT_STARTED",
@@ -21,8 +22,8 @@ interface GameState {
   newWord: string,
 }
 
-// let startingWords = ["dark", "rose", "kiss", "ball"];
-let startingWords = ["dark", "rose"];
+// CVCV, CCVC, CVCC, CVVC, Other
+let startingWords = ["came", "flat", "lots", "bead", "tree"];
 
 const generateRandomId = (length: number = 16): string => {
   const chars =
@@ -195,23 +196,33 @@ export default function Home() {
     );
   }
 
+  const InstructionsList = () => {
+    return (
+      <div>
+      <p className="mb-4 text-lg text-gray-500 mt-4">Instructions:</p>
+        <ul className="list-disc space-y-2 pl-4 text-lg mb-4">
+          <li>We will give you a 4 letter starting word.</li>
+          <li>The new word you guess must be a valid English word and <b>only one letter</b> different from the previous word!</li>
+          <li>You have 1 minute to keep it going as long as you can think of words that follow the chain rule.</li>
+          <li><b>No repeats: </b> You cannot use the same word twice!</li>
+          <li><b>Example: </b>BEAR-FEAR-FEAT-NEAT-MEAT-MEAN-LEAN-BEAN-BEAT</li>
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <main className="container relative flex flex-col justify-between h-full max-w-6xl px-10 mx-auto xl:px-0 mt-5">
       {gameState.gameStatus == GameStateEnums.GAME_NOT_STARTED && (
           <div className="word-chain-game">
             <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
-            <p className="mb-4 text-lg text-gray-500 mt-4">Instructions:</p>
-            <ul className="list-disc space-y-2 pl-4 text-lg mb-4">
-              <li>We will give you a 4 letter starting word.</li>
-              <li>The new word you guess must be a valid English word and <b>only one letter</b> different from the previous word!</li>
-              <li>You have 1 minute to keep it going as long as you can think of words that follow the chain rule.</li>
-              <li><b>No repeats: </b> You cannot use the same word twice!</li>
-              <li><b>Example: </b>BEAR-FEAR-FEAT-NEAT-MEAT-MEAN-LEAN-BEAN-BEAT</li>
-            </ul>
+            <div className="border-solid border-2 border-gray-500 rounded-md"> <h2 className="px-2 py-2 mb-1 text-1xl leading-tight text-gray-900">This game was made by Saanvi Narla (using some help), 3rd grade at Cedar Crest Academy, Bellewood. <br/><br/>The game is a science experiment to see how people of different ages perform on the game. No personal information is collected other than age.</h2>
+            </div>
+            {InstructionsList()}
             <p className="mb-4 text-lg text-gray-500">Enter your age to begin:</p>
             <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500" type="number" value={age} onChange={handleAgeChange} />
             <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2" onClick={handleStartRound}>
-              Start Round 1 / 3
+              Start Round {gameState.currentRound + 2} / {startingWords.length}
             </button>
           </div>
         )}
@@ -220,16 +231,18 @@ export default function Home() {
           <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
           <div>
             <h2 className="mb-3 text-2xl font-bold leading-tight text-gray-700">Time Left: {timeLeft} seconds</h2>
-            <h3 className="mb-3 text-2xl font-bold leading-tight text-gray-700 whitespace-wrap">⛓️ {ColorfulList(gameState.usedWords)}</h3>
-            <p className="mb-2 items-center text-gray-600">Enter a new word that differs by only 1 letter:</p>
+            <h3 className="mb-3 text-2xl font-bold leading-tight text-gray-700 whitespace-wrap">{ColorfulList(gameState.usedWords)}</h3>
+            <p className="mb-2 items-center text-gray-600">Enter a new word that differs by only 1 letter (hit Enter to submit word):</p>
             <input className="w-full py-3 px-4 border border-gray-400 rounded-lg focus:outline-none focus:border-blue-500"
               type="text"
               value={gameState.newWord}
               onKeyDown={handleKeyDown}
               onChange={handleWordChange}
+              autoFocus
             />
             {errorMessage && <p className="error-message">{errorMessage}</p>}
             <h4 className="mb-2 flex text-3xl font-extrabold items-center text-lime-600">Score: {score}</h4>
+            {InstructionsList()}
           </div>
         </div>
       )}
@@ -237,9 +250,9 @@ export default function Home() {
         <div className="word-chain-game">
           <h1 className="mb-1 text-3xl font-extrabold leading-tight text-gray-900">Welcome to Word Chain!</h1>
             <h2 className="mb-3 text-2xl font-bold leading-tight text-lime-700 whitespace-wrap">You scored {score} points in that round.</h2>
-            {gameover && <h2 className="mb-3 text-2xl mt-6 leading-tight text-gray-700">🙏 Thanks for playing and helping my science experiment. Please share with a friend so I can collect more data and improve my science experiment.</h2>}
+            {gameover && <h2 className="mb-3 text-2xl mt-6 leading-tight text-gray-700">🙏 Thanks for playing and helping my science experiment. Please share with a friend so I can collect more data and improve my science experiment. <br/><br/>- Saanvi Narla</h2>}
             {!gameover && <button className="w-full bg-green-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg focus:outline-none mt-2"
-            onClick={handleStartRound}>Start next round</button>}
+            onClick={handleStartRound}>Start round {gameState.currentRound + 2} / {startingWords.length} </button>}
         </div>
       )}
     </main>
